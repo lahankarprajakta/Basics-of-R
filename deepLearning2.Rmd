@@ -1,0 +1,137 @@
+---
+title: "Deep Learning Demo"
+author: "Vishal Lala"
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    toc: true
+    df_print: paged
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    highlight: haddock
+  tufte::tufte_handout: default
+  ioslides_presentation: default
+  html_vignette: default
+  html_document: 
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    theme: cerulean
+    highlight: haddock
+    df_print: paged
+  beamer_presentation: default
+---
+
+
+# House Data
+```{r, warning=F, message=F}
+data = read.csv('https://raw.githubusercontent.com/pseudorational/data/master/houses.csv')
+data = data[,c('price','bedrooms','bathrooms','sqft_living','sqft_lot','floors','waterfront','view','condition','grade','age')]
+str(data)
+```
+
+
+## Split Data
+```{r, warning=F, message=F}
+set.seed(1031)
+split = sample(x = c('train','validation','test'),size = nrow(data),replace = T,prob = c(0.4,0.4,0.2))
+train = data[split=='train',]
+validation = data[split=='validation',]
+test = data[split=='test',]
+```
+
+# Linear Regression Model
+```{r, warning=F, message=F}
+linearModel = lm(price~.,data=train)
+pred = predict(linearModel,newdata=test)
+rmse_linear = sqrt(mean((pred - test$price)^2)); rmse_linear
+```
+
+# Deep Learning
+
+## Prepare Data
+```{r, warning=F, message=F}
+install.packages('h2o')
+library(h2o)
+h2o.init()
+train_h2o = as.h2o(train)
+validation_h2o = as.h2o(validation)
+test_h2o = as.h2o(test)
+```
+
+## Basic Neural Network
+Hidden Layer: 1
+Hidden Units: 5
+```{r, warning=F, message=F}
+model1 = h2o.deeplearning(x=2:11,
+                          y = 1,
+                          training_frame = train_h2o,
+                          hidden=c(5),
+                          seed=1031)
+h2o.performance(model1,newdata=test_h2o)
+```
+
+## Deep Learning Model with Two Layers
+Hidden Layers: 2
+Hidden Units: 5 in each layer
+```{r, warning=F, message=F}
+model2 = h2o.deeplearning(x=2:11,
+                          y = 1,
+                          training_frame = train_h2o,
+                          hidden=c(5,5),
+                          seed=1031)
+h2o.performance(model2,newdata=test_h2o)
+```
+
+## Deep Learning Model with Three Layers
+Hidden Layers: 3
+Hidden Units: 10 in each layer
+```{r, warning=F, message=F}
+model3 = h2o.deeplearning(x=2:11,
+                          y = 1,
+                          training_frame = train_h2o,
+                          hidden=c(10,10,10),
+                          seed=1031)
+h2o.performance(model3,newdata=test_h2o)
+```
+
+## Deep Learning Model
+Construct your own Deep Learning Model Architecture
+Hidden Layers: ??
+Hidden Units: ??
+```{r, warning=F, message=F}
+model4 = h2o.deeplearning(x=2:11,
+                          y = 1,
+                          training_frame = train_h2o,
+                          hidden=c(20,30,20,30),
+                          seed=1031)
+h2o.performance(model4,newdata=test_h2o)
+```
+
+
+## Tuned Model
+Here is a model obtained from tuning hyperparameters.Hyperparameter tuning code is not here as it takes a long time to run. 
+```{r, warning=F, message=F}
+model5 = h2o.deeplearning(x=2:11,
+                          y=1,
+                          training_frame=train_h2o,
+                          standardize = T,
+                          activation = 'Rectifier',
+                          hidden = c(50,50),
+                          epochs = 10,
+                          seed=1031,
+                          adaptive_rate = T,
+                          rho=0.99,
+                          epsilon = 1e-08, 
+                          input_dropout_ratio = 0,
+                          l1=7.9e-05,
+                          l2=4e-05,
+                          max_w2 = 3.4e+38,
+                          stopping_metric = 'RMSE',
+                          stopping_tolerance = 0.01)
+h2o.performance(model5,newdata=test_h2o)
+```
+
+
+
